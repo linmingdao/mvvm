@@ -11,7 +11,7 @@ function Compile(el, vm) {
 
 Compile.prototype = {
     constructor: Compile,
-    node2Fragment: function(el) {
+    node2Fragment(el) {
         var fragment = document.createDocumentFragment(),
             child;
 
@@ -23,11 +23,11 @@ Compile.prototype = {
         return fragment;
     },
 
-    init: function() {
+    init() {
         this.compileElement(this.$fragment);
     },
 
-    compileElement: function(el) {
+    compileElement(el) {
         var childNodes = el.childNodes,
             me = this;
 
@@ -36,19 +36,23 @@ Compile.prototype = {
             var reg = /\{\{(.*)\}\}/;
 
             if (me.isElementNode(node)) {
+                // 是元素节点, 先编译自身, 后面会递归编该元素节点的所有子元素
                 me.compile(node);
 
             } else if (me.isTextNode(node) && reg.test(text)) {
+                // 元素的文本内容含有表达式: {{}} , 则编译表达式, 这里只是实现了 第一个子匹配, 
+                // 即无法支持多个表达式: <p>{{ getHelloWord }} {{ xxx }}</p>
                 me.compileText(node, RegExp.$1.trim());
             }
 
             if (node.childNodes && node.childNodes.length) {
+                // 递归编译所有子节点
                 me.compileElement(node);
             }
         });
     },
 
-    compile: function(node) {
+    compile(node) {
         var nodeAttrs = node.attributes,
             me = this;
 
@@ -70,30 +74,30 @@ Compile.prototype = {
         });
     },
 
-    compileText: function(node, exp) {
+    compileText(node, exp) {
         compileUtil.text(node, this.$vm, exp);
     },
 
-    isDirective: function(attr) {
+    isDirective(attr) {
         return attr.indexOf('v-') == 0;
     },
 
-    isEventDirective: function(dir) {
+    isEventDirective(dir) {
         return dir.indexOf('on') === 0;
     },
 
-    isElementNode: function(node) {
+    isElementNode(node) {
         return node.nodeType == 1;
     },
 
-    isTextNode: function(node) {
+    isTextNode(node) {
         return node.nodeType == 3;
     }
 };
 
 // 指令处理集合
 var compileUtil = {
-    text: function(node, vm, exp) {
+    text(node, vm, exp) {
         this.bind(node, vm, exp, 'text');
     },
 
@@ -121,12 +125,16 @@ var compileUtil = {
         this.bind(node, vm, exp, 'class');
     },
 
-    bind: function(node, vm, exp, dir) {
+    bind(node, vm, exp, dir) {
+        // 获取更新视图的函数
         var updaterFn = updater[dir + 'Updater'];
 
+        // 初始化一次视图
         updaterFn && updaterFn(node, this._getVMVal(vm, exp));
 
+        // new Watcher() 会设置 Dep.target = 刚刚创建的 Watcher
         new Watcher(vm, exp, function(value, oldValue) {
+            // 更新视图
             updaterFn && updaterFn(node, value, oldValue);
         });
     },
@@ -141,16 +149,17 @@ var compileUtil = {
         }
     },
 
-    _getVMVal: function(vm, exp) {
+    _getVMVal(vm, exp) {
         var val = vm;
         exp = exp.split('.');
         exp.forEach(function(k) {
             val = val[k];
         });
+
         return val;
     },
 
-    _setVMVal: function(vm, exp, value) {
+    _setVMVal(vm, exp, value) {
         var val = vm;
         exp = exp.split('.');
         exp.forEach(function(k, i) {
@@ -164,17 +173,17 @@ var compileUtil = {
     }
 };
 
-
+// 视图更新器
 var updater = {
-    textUpdater: function(node, value) {
+    textUpdater(node, value) {
         node.textContent = typeof value == 'undefined' ? '' : value;
     },
 
-    htmlUpdater: function(node, value) {
+    htmlUpdater(node, value) {
         node.innerHTML = typeof value == 'undefined' ? '' : value;
     },
 
-    classUpdater: function(node, value, oldValue) {
+    classUpdater(node, value, oldValue) {
         var className = node.className;
         className = className.replace(oldValue, '').replace(/\s$/, '');
 
@@ -183,7 +192,7 @@ var updater = {
         node.className = className + space + value;
     },
 
-    modelUpdater: function(node, value, oldValue) {
+    modelUpdater(node, value, oldValue) {
         node.value = typeof value == 'undefined' ? '' : value;
     }
 };

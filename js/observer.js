@@ -12,7 +12,7 @@ Observer.prototype = {
             me.convert(key, data[key]);
         });
     },
-    
+
     convert(key, val) {
         this.defineReactive(this.data, key, val);
     },
@@ -24,20 +24,26 @@ Observer.prototype = {
         Object.defineProperty(data, key, {
             enumerable: true, // 可枚举
             configurable: false, // 不能再define
-            get: function() {
+
+            get() {
                 if (Dep.target) {
+                    // 这里收集了依赖
                     dep.depend();
                 }
+
                 return val;
             },
-            set: function(newVal) {
+
+            set(newVal) {
                 if (newVal === val) {
                     return;
                 }
                 val = newVal;
+                
                 // 新的值是object的话，进行监听
                 childObj = observe(newVal);
-                // 通知订阅者
+
+                // 通知订阅者, 这里实现了单向数据绑定: Model -> View
                 dep.notify();
             }
         });
@@ -86,4 +92,5 @@ Dep.prototype = {
     }
 };
 
+// 注意这里是一个静态的属性
 Dep.target = null;
