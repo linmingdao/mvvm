@@ -22,6 +22,12 @@ MVVM.prototype = {
         new Watcher(this, key, cb);
     },
 
+    /**
+     * 将 Model 代理到 vm 上, 实现 在 methods 里可以直接通过 this.xxx 访问 or 设置 Model
+     * @param {*} key 
+     * @param {*} setter 
+     * @param {*} getter 
+     */
     _proxyData: function(key, setter, getter) {
         var me = this;
         setter = setter || 

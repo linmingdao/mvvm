@@ -5,17 +5,19 @@ function Observer(data) {
 
 Observer.prototype = {
     constructor: Observer,
-    walk: function(data) {
+
+    walk(data) {
         var me = this;
         Object.keys(data).forEach(function(key) {
             me.convert(key, data[key]);
         });
     },
-    convert: function(key, val) {
+    
+    convert(key, val) {
         this.defineReactive(this.data, key, val);
     },
 
-    defineReactive: function(data, key, val) {
+    defineReactive(data, key, val) {
         var dep = new Dep();
         var childObj = observe(val);
 
@@ -53,28 +55,31 @@ function observe(value, vm) {
 
 var uid = 0;
 
+/**
+ * 依赖收集
+ */
 function Dep() {
     this.id = uid++;
     this.subs = [];
 }
 
 Dep.prototype = {
-    addSub: function(sub) {
+    addSub(sub) {
         this.subs.push(sub);
     },
 
-    depend: function() {
+    depend() {
         Dep.target.addDep(this);
     },
 
-    removeSub: function(sub) {
+    removeSub(sub) {
         var index = this.subs.indexOf(sub);
         if (index != -1) {
             this.subs.splice(index, 1);
         }
     },
 
-    notify: function() {
+    notify() {
         this.subs.forEach(function(sub) {
             sub.update();
         });
