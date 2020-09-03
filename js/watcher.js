@@ -11,7 +11,7 @@ function Watcher(vm, expOrFn, cb) {
         this.getter = this.parseGetter(expOrFn.trim());
     }
 
-    // 缓存一次当前的值
+    // 缓存一次当前的值, 同时触发一次收集依赖
     this.value = this.get();
 }
 
@@ -23,10 +23,12 @@ Watcher.prototype = {
     },
 
     run() {
+        // 获取最新的值
         var value = this.get();
         var oldVal = this.value;
         if (value !== oldVal) {
             this.value = value;
+            // 更新视图
             this.cb.call(this.vm, value, oldVal);
         }
     },
@@ -56,6 +58,7 @@ Watcher.prototype = {
     },
 
     get() {
+        // js是单线程的
         Dep.target = this;
         // 会触发 Observer 中的 getter, 从而触发 dep.depend(), 进而触发 Dep.target.addDep(this);
         var value = this.getter.call(this.vm, this.vm);
